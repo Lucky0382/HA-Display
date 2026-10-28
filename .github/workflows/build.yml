@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Wi-Fi details come from the repo's Actions secrets, so they are never
       # stored in the repository itself.
@@ -25,17 +25,36 @@ jobs:
           printf 'wifi_ssid: "%s"\nwifi_password: "%s"\n' "$WIFI_SSID" "$WIFI_PASSWORD" > secrets.yaml
 
       - name: Compile with ESPHome
-        id: esphome
-        uses: esphome/build-action@v8.1.0
-        with:
-          yaml-file: wall-panel.yaml
+        run: |
+          set -o pipefail
+          docker run --rm -v "$PWD":/config ghcr.io/esphome/esphome:latest compile wall-panel.yaml 2>&1 | tee build.log
+
+      # Puts the important part of a failed build into the run summary /
+      # annotations so it can be read without downloading the whole log.
+      - name: Report build errors
+        if: failure()
+        run: |
+          [ -f build.log ] || exit 0
+          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' build.log > clean.log
+          { echo "== matching lines =="
+            grep -nE "error|Error|ERROR|Failed config|Invalid|is an invalid option|undefined reference" clean.log | grep -v "ignore_pin_validation_error" | tail -40 || true
+            echo "== last lines =="
+            tail -60 clean.log; } > errs.txt
+          msg=$(sed 's/%/%25/g; s/\r//g' errs.txt | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::error title=Build log::$msg"
 
       - name: Remove secrets.yaml
         if: always()
         run: rm -f secrets.yaml
 
+      - name: Collect firmware
+        run: |
+          mkdir -p out
+          find .esphome/build -name 'firmware*.bin' -exec cp {} out/ \;
+          ls -la out
+
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: displayiq-firmware
-          path: ${{ steps.esphome.outputs.name }}
+          path: out/
