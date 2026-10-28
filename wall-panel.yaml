@@ -344,10 +344,10 @@ binary_sensor:
           bg_color: !lambda 'return x ? lv_color_hex(${col_alert}) : lv_color_hex(${col_ok});'
       - lvgl.label.update:
           id: leak_ic
-          text: !lambda 'return x ? "\U000F1502" : "\U000F1504";'
+          text: !lambda 'return std::string(x ? "\U000F1502" : "\U000F1504");'
       - lvgl.label.update:
           id: leak_val
-          text: !lambda 'return x ? "LEAK!" : "Dry";'
+          text: !lambda 'return std::string(x ? "LEAK!" : "Dry");'
       - if:
           condition:
             lambda: 'return x;'
@@ -483,7 +483,7 @@ voice_assistant:
     - lvgl.label.update: {id: voice_state, text: "Thinking..."}
     - lvgl.label.update:
         id: voice_stt
-        text: !lambda 'return "\"" + x + "\"";'
+        text: !lambda 'return std::string("\"") + x + "\"";'
   on_tts_start:
     - lvgl.label.update: {id: voice_state, text: "Answering..."}
     - lvgl.label.update:
