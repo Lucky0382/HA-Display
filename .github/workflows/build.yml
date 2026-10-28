@@ -35,11 +35,10 @@ jobs:
         if: failure()
         run: |
           [ -f build.log ] || exit 0
-          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' build.log > clean.log
-          { echo "== matching lines =="
-            grep -nE "error|Error|ERROR|Failed config|Invalid|is an invalid option|undefined reference" clean.log | grep -v "ignore_pin_validation_error" | tail -40 || true
+          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' build.log | tr '\r' '\n' | grep -vE '^\[[0-9]+/[0-9]+\] ' | cut -c1-300 > clean.log
+          { grep -nE "error:|Error|ERROR|Failed config|Invalid|invalid option|undefined reference|FAILED" clean.log | grep -v "ignore_pin_validation_error" | head -25 || true
             echo "== last lines =="
-            tail -60 clean.log; } > errs.txt
+            tail -15 clean.log; } > errs.txt
           msg=$(sed 's/%/%25/g; s/\r//g' errs.txt | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::error title=Build log::$msg"
 
