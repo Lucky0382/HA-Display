@@ -1,0 +1,2332 @@
+# =============================================================================
+# Wall panel - Waveshare ESP32-S3-Touch-LCD-3.5-C  (320x480 ST7796, run landscape)
+# =============================================================================
+# Layout
+#   Status bar   outside temp | clock | Wi-Fi / Home Assistant link
+#   Page 1       Lights            8 tiles
+#   Page 2       Hall & bath       8 tiles
+#   Page 3       Water & heat      8 tiles  (taps + shower need a LONG PRESS)
+#   Page 4       Modes & blinds    8 tiles
+#   Page 5       Climate           temperatures, hot water, solar, leak sensor
+#   Page 6       Voice assistant   tap the mic, or say "Okay Nabu"
+#   Swipe left/right or use the bar at the bottom to change page.
+#   Tiles turn amber when the entity is on / open.
+#
+# Everything you would normally change is in the substitutions block.
+#
+# Changing an icon: find it at https://pictogrammers.com/library/mdi/, take its
+# F0xxx code and write it as "\U000F0xxx". Then make sure that same code is
+# in the glyphs: list of icon_font further down (each code only once).
+#
+# Before the first flash:
+#   * Home Assistant > Settings > Devices > ESPHome > this device > CONFIGURE
+#     and turn on "Allow the device to perform Home Assistant actions",
+#     otherwise tapping a tile does nothing.
+#   * Written for the current ESPHome release - update the ESPHome add-on first.
+# =============================================================================
+
+substitutions:
+  name: "displayiq"       # must match the device already in ESPHome
+  friendly_name: "DisplayIQ"
+
+  # ------------------------------------------------------------ backlight --
+  bright_active: "90%"
+  bright_idle: "8%"        # "0%" turns the screen off when idle
+  dim_after: 60s
+
+  # ----------------------------------------------------------------- look --
+  col_bg: "0x0A0D11"       # page background
+  col_tile: "0x2B3036"     # tile, off
+  col_tile_on: "0xF07A14"  # tile, on (amber)
+  col_text: "0xFFFFFF"
+  col_text_on: "0x14100A"  # text on an amber tile
+  col_dim: "0x8A9399"      # secondary text, inactive nav
+  col_ok: "0x2E7D32"       # leak tile, dry
+  col_alert: "0xC62828"    # leak tile, wet
+
+  # Outside temperature for the status bar
+  outside_temp: "sensor.met_office_eastville_temperature"
+
+  # ------------------------------------------------- lights page --
+  l1_entity: "light.bedroom"
+  l1_name: "Bedroom"
+  l1_icon: "\U000F02E3"
+  l2_entity: "light.bedroom2"
+  l2_name: "Bedroom 2"
+  l2_icon: "\U000F0099"
+  l3_entity: "light.lounge_1"
+  l3_name: "Lounge"
+  l3_icon: "\U000F04B9"
+  l4_entity: "light.lounge_2"
+  l4_name: "Lounge 2"
+  l4_icon: "\U000F156D"
+  l5_entity: "light.kitchen_lighting"
+  l5_name: "Kitchen"
+  l5_icon: "\U000F181C"
+  l6_entity: "light.outside_lights"
+  l6_name: "Outside"
+  l6_icon: "\U000F1054"
+  l7_entity: "switch.desk_light"
+  l7_name: "Desk"
+  l7_icon: "\U000F095F"
+  l8_entity: "switch.kettle"
+  l8_name: "Kettle"
+  l8_icon: "\U000F05FA"
+
+  # ------------------------------------------------- hall & bath page --
+  b1_entity: "light.hallway1"
+  b1_name: "Hall 1"
+  b1_icon: "\U000F179B"
+  b2_entity: "light.hallway2"
+  b2_name: "Hall 2"
+  b2_icon: "\U000F179B"
+  b3_entity: "light.hallway3"
+  b3_name: "Hall 3"
+  b3_icon: "\U000F179B"
+  b4_entity: "light.hallway4"
+  b4_name: "Hall 4"
+  b4_icon: "\U000F179B"
+  b5_entity: "light.vanity_niche"
+  b5_name: "Vanity Niche"
+  b5_icon: "\U000F091D"
+  b6_entity: "light.bath_niche"
+  b6_name: "Bath Niche"
+  b6_icon: "\U000F1819"
+  b7_entity: "light.shower_niche"
+  b7_name: "Shower Niche"
+  b7_icon: "\U000F09A1"
+  b8_entity: "light.bathroom_ceiling_light_l1"
+  b8_name: "Bath Ceiling"
+  b8_icon: "\U000F0769"
+
+  # ------------------------------------------------- water & heat page --
+  w1_entity: "valve.bath_tap_hot"
+  w1_name: "Hot Tap"
+  w1_icon: "\U000F1B29"
+  w2_entity: "switch.0xa4c138f5ab6b5b45"
+  w2_name: "Cold Tap"
+  w2_icon: "\U000F1B2A"
+  w3_entity: "switch.shower_control_valve"
+  w3_name: "Shower"
+  w3_icon: "\U000F09A1"
+  w4_entity: "fan.bathroom_extraction_high_speed"
+  w4_name: "Bath Fan"
+  w4_icon: "\U000F0210"
+  w5_entity: "switch.immersion_heater_top"
+  w5_name: "Immersion Top"
+  w5_icon: "\U000F1A80"
+  w6_entity: "switch.immersion_heater_bottom"
+  w6_name: "Immersion Bottom"
+  w6_icon: "\U000F1A85"
+  w7_entity: "switch.kitchen_heater_on_peak"
+  w7_name: "Kitchen Heat"
+  w7_icon: "\U000F0438"
+  w8_entity: "switch.lounge_on_peak_heating"
+  w8_name: "Lounge Heat"
+  w8_icon: "\U000F1A45"
+
+  # ------------------------------------------------- modes & blinds page --
+  m1_entity: "input_boolean.cleaning_mode"
+  m1_name: "Cleaning"
+  m1_icon: "\U000F0AE0"
+  m2_entity: "input_boolean.sleep_mode"
+  m2_name: "Sleep"
+  m2_icon: "\U000F04B2"
+  m3_entity: "input_boolean.guest_mode"
+  m3_name: "Guest"
+  m3_icon: "\U000F0849"
+  m4_entity: "input_boolean.bath_mode"
+  m4_name: "Bath Mode"
+  m4_icon: "\U000F1819"
+  m5_entity: "cover.bathroom_roller_blind"
+  m5_name: "Bath Blind"
+  m5_icon: "\U000F1A6B"
+  m6_entity: "cover.hallway_curtains"
+  m6_name: "Hall Curtains"
+  m6_icon: "\U000F1846"
+  m7_entity: "switch.server_room_light"
+  m7_name: "Server Room"
+  m7_icon: "\U000F048B"
+  m8_entity: "light.vanity_1"
+  m8_name: "Vanity"
+  m8_icon: "\U000F11E1"
+
+  # ------------------------------------------------------- climate page --
+  i1_entity: "sensor.met_office_eastville_temperature"
+  i1_name: "Outside"
+  i1_icon: "\U000F050F"
+  i1_format: "%.1f°"
+  i2_entity: "sensor.temp_hallway"
+  i2_name: "Hallway"
+  i2_icon: "\U000F0F55"
+  i2_format: "%.1f°"
+  i3_entity: "sensor.smart_controller_server_room_temp"
+  i3_name: "Server Room"
+  i3_icon: "\U000F048B"
+  i3_format: "%.1f°"
+  i4_entity: "sensor.temp_tank_outlet"
+  i4_name: "Tank Outlet"
+  i4_icon: "\U000F1A80"
+  i4_format: "%.1f°"
+  i5_entity: "sensor.usable_hot_water_liters"
+  i5_name: "Hot Water"
+  i5_icon: "\U000F0F92"
+  i5_format: "%.0f L"
+  i6_entity: "sensor.power_production_now"
+  i6_name: "Solar Now"
+  i6_icon: "\U000F0A72"
+  i6_format: "%.0f W"
+  i7_entity: "sensor.energy_production_today"
+  i7_name: "Solar Today"
+  i7_icon: "\U000F1A73"
+  i7_format: "%.1f kWh"
+  leak_entity: "binary_sensor.server_room_smart_controller_leak_sensor"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    # The AXP2101 power chip feeds the audio codec, camera and touch rails.
+    # It normally comes up configured, but after the battery has been flat
+    # it can boot with some rails off. This puts them back the way
+    # Waveshare's own firmware sets them (3.3 V on ALDO1-4, 1.5/2.8 V BLDOs).
+    - priority: 850
+      then:
+        - lambda: |-
+            const uint8_t vregs[6] = {0x92, 0x93, 0x94, 0x95, 0x96, 0x97};
+            const uint8_t vvals[6] = {28, 28, 28, 28, 10, 23};  // (mV - 500) / 100
+            for (int i = 0; i < 6; i++) {
+              auto cur = id(pmu).read_byte(vregs[i]);
+              if (cur.has_value())
+                id(pmu).write_byte(vregs[i], (*cur & 0xE0) | vvals[i]);
+            }
+            auto en = id(pmu).read_byte(0x90);
+            if (en.has_value())
+              id(pmu).write_byte(0x90, *en | 0x3F);  // ALDO1-4, BLDO1-2 on
+    - priority: -100
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: ${bright_active}
+
+esp32:
+  variant: esp32s3
+  board: esp32-s3-devkitc-1
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB: "y"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${friendly_name} Fallback"
+  on_connect:
+    - lvgl.label.update:
+        id: wifi_icon
+        text: "\U000F05A9"
+  on_disconnect:
+    - lvgl.label.update:
+        id: wifi_icon
+        text: "\U000F05AA"
+
+captive_portal:
+
+logger:
+  level: INFO
+
+api:
+  on_client_connected:
+    - lvgl.label.update:
+        id: wifi_icon
+        text_color: ${col_text}
+    - delay: 2s
+    - if:
+        condition:
+          - switch.is_on: wake_word_enabled
+          - not: voice_assistant.is_running
+        then:
+          - micro_wake_word.start:
+  on_client_disconnected:
+    - lvgl.label.update:
+        id: wifi_icon
+        text_color: ${col_dim}
+    - voice_assistant.stop:
+    - micro_wake_word.stop:
+
+ota:
+  - platform: esphome
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    timezone: Europe/London
+    on_time_sync:
+      - script.execute: update_clock
+    on_time:
+      - seconds: 0
+        then:
+          - script.execute: update_clock
+
+# =============================================================================
+# Hardware - you should not need to change anything below this line
+# =============================================================================
+# Pins from Waveshare's board support package and the V1/V2 schematics.
+i2c:
+  - id: bus_a
+    sda: GPIO8
+    scl: GPIO7
+    frequency: 400kHz
+
+# TCA9554 IO expander
+#   EXIO0 camera power-down   EXIO1 LCD + touch reset   EXIO2 touch interrupt
+#   EXIO6 PWR button           EXIO7 speaker amplifier (NS4150B) enable
+pca9554:
+  - id: exio
+    address: 0x20
+
+# AXP2101 power management chip, used by the on_boot lambda above
+i2c_device:
+  - id: pmu
+    address: 0x34
+
+switch:
+  - platform: gpio
+    id: speaker_amp
+    internal: true
+    restore_mode: ALWAYS_ON
+    pin:
+      pca9554: exio
+      number: 7
+
+  - platform: template
+    id: wake_word_enabled
+    name: "Wake word"
+    icon: mdi:account-voice
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    entity_category: config
+    on_turn_on:
+      - if:
+          condition:
+            not: voice_assistant.is_running
+          then:
+            - micro_wake_word.start:
+    on_turn_off:
+      - micro_wake_word.stop:
+
+binary_sensor:
+  # PWR button on the side: press to wake the screen
+  - platform: gpio
+    id: pwr_button
+    name: "Power button"
+    pin:
+      pca9554: exio
+      number: 6
+    on_press:
+      - script.execute: wake_screen
+
+  - platform: homeassistant
+    id: leak_state
+    entity_id: ${leak_entity}
+    trigger_on_initial_state: true
+    on_state:
+      - lvgl.widget.update:
+          id: leak_tile
+          bg_color: !lambda 'return x ? lv_color_hex(${col_alert}) : lv_color_hex(${col_ok});'
+      - lvgl.label.update:
+          id: leak_ic
+          text: !lambda 'return x ? "\U000F1502" : "\U000F1504";'
+      - lvgl.label.update:
+          id: leak_val
+          text: !lambda 'return x ? "LEAK!" : "Dry";'
+      - if:
+          condition:
+            lambda: 'return x;'
+          then:
+            - script.execute: wake_screen
+            - lvgl.page.show: climate_page
+
+output:
+  - platform: ledc
+    id: backlight_pwm
+    pin: GPIO6
+    frequency: 5000Hz
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "Screen"
+    icon: mdi:tablet
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 300ms
+    entity_category: config
+
+spi:
+  - id: lcd_spi
+    clk_pin: GPIO5
+    mosi_pin: GPIO1
+
+display:
+  - platform: mipi_spi
+    id: lcd
+    model: ST7796
+    spi_id: lcd_spi
+    dc_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
+    # No CS line on this board; reset comes from the IO expander.
+    reset_pin:
+      pca9554: exio
+      number: 1
+    # Same mode and colour order as your existing DisplayIQ config, which
+    # is known to work on this panel.
+    spi_mode: MODE1
+    data_rate: 40MHz        # drop to 20MHz if you see noise or stripes
+    color_order: rgb
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - platform: ft63x6
+    id: touch
+    display: lcd
+    # Touch follows the display rotation automatically. If taps land in the
+    # wrong place, uncomment this - it is what your old DisplayIQ config
+    # used - or flip the values until they line up.
+    # transform:
+    #   swap_xy: true
+    #   mirror_x: false
+    #   mirror_y: true
+    on_release:
+      - if:
+          condition:
+            lambda: 'return id(dimmed);'
+          then:
+            - script.execute: wake_screen
+
+# =============================================================================
+# Audio - ES8311 codec, speaker amp on EXIO7, analog mic into the codec
+# =============================================================================
+i2s_audio:
+  - id: i2s_bus
+    i2s_mclk_pin: GPIO12
+    i2s_bclk_pin: GPIO13
+    i2s_lrclk_pin: GPIO15
+
+audio_dac:
+  - platform: es8311
+    id: codec
+    address: 0x18
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    use_mclk: true
+    use_microphone: false   # false = analog mic (this board)
+    mic_gain: 42DB          # drop to 30DB if Assist mishears you from close up
+
+microphone:
+  - platform: i2s_audio
+    id: mic
+    i2s_audio_id: i2s_bus
+    i2s_din_pin: GPIO14
+    adc_type: external
+    pdm: false
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    channel: left           # try "right" if Assist hears nothing
+
+speaker:
+  - platform: i2s_audio
+    id: spk
+    i2s_audio_id: i2s_bus
+    i2s_dout_pin: GPIO16
+    dac_type: external
+    audio_dac: codec
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    channel: mono
+
+micro_wake_word:
+  id: mww
+  microphone: mic
+  models:
+    - model: okay_nabu
+  on_wake_word_detected:
+    - script.execute: wake_screen
+    - lvgl.page.show: voice_page
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+voice_assistant:
+  id: va
+  microphone: mic
+  speaker: spk
+  micro_wake_word: mww
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+  on_listening:
+    - lvgl.label.update: {id: voice_state, text: "Listening..."}
+    - lvgl.label.update: {id: voice_stt, text: ""}
+    - lvgl.label.update: {id: voice_reply, text: ""}
+    - lvgl.widget.update: {id: mic_btn, state: {checked: true}}
+  on_stt_end:
+    - lvgl.label.update: {id: voice_state, text: "Thinking..."}
+    - lvgl.label.update:
+        id: voice_stt
+        text: !lambda 'return "\"" + x + "\"";'
+  on_tts_start:
+    - lvgl.label.update: {id: voice_state, text: "Answering..."}
+    - lvgl.label.update:
+        id: voice_reply
+        text: !lambda 'return x;'
+  on_error:
+    - lvgl.label.update:
+        id: voice_state
+        text: !lambda 'return message;'
+  on_end:
+    - lvgl.widget.update: {id: mic_btn, state: {checked: false}}
+    - lvgl.label.update: {id: voice_state, text: "Tap the mic or say \"Okay Nabu\""}
+    - wait_until:
+        not: voice_assistant.is_running
+    - if:
+        condition:
+          switch.is_on: wake_word_enabled
+        then:
+          - micro_wake_word.start:
+
+# =============================================================================
+# Home Assistant states -> tiles
+# =============================================================================
+# text_sensor rather than binary_sensor so covers ("open") and valves work too.
+text_sensor:
+  - platform: homeassistant
+    id: l1_state
+    entity_id: ${l1_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l1_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l2_state
+    entity_id: ${l2_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l2_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l3_state
+    entity_id: ${l3_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l3_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l4_state
+    entity_id: ${l4_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l4_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l5_state
+    entity_id: ${l5_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l5_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l6_state
+    entity_id: ${l6_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l6_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l7_state
+    entity_id: ${l7_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l7_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: l8_state
+    entity_id: ${l8_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: l8_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b1_state
+    entity_id: ${b1_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b1_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b2_state
+    entity_id: ${b2_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b2_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b3_state
+    entity_id: ${b3_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b3_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b4_state
+    entity_id: ${b4_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b4_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b5_state
+    entity_id: ${b5_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b5_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b6_state
+    entity_id: ${b6_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b6_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b7_state
+    entity_id: ${b7_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b7_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: b8_state
+    entity_id: ${b8_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: b8_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w1_state
+    entity_id: ${w1_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w1_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w2_state
+    entity_id: ${w2_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w2_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w3_state
+    entity_id: ${w3_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w3_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w4_state
+    entity_id: ${w4_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w4_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w5_state
+    entity_id: ${w5_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w5_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w6_state
+    entity_id: ${w6_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w6_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w7_state
+    entity_id: ${w7_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w7_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: w8_state
+    entity_id: ${w8_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: w8_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m1_state
+    entity_id: ${m1_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m1_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m2_state
+    entity_id: ${m2_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m2_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m3_state
+    entity_id: ${m3_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m3_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m4_state
+    entity_id: ${m4_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m4_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m5_state
+    entity_id: ${m5_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m5_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m6_state
+    entity_id: ${m6_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m6_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m7_state
+    entity_id: ${m7_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m7_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+  - platform: homeassistant
+    id: m8_state
+    entity_id: ${m8_entity}
+    on_value:
+      - lvgl.widget.update:
+          id: m8_tile
+          state:
+            checked: !lambda 'return x == "on" || x == "open" || x == "opening";'
+
+sensor:
+  - platform: homeassistant
+    id: outside_temp_state
+    entity_id: ${outside_temp}
+    on_value:
+      - lvgl.label.update:
+          id: status_temp
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--°");
+            char b[12]; snprintf(b, sizeof(b), "%.1f°", x); return std::string(b);
+  - platform: homeassistant
+    id: i1_state
+    entity_id: ${i1_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i1_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i1_format}", x); return std::string(b);
+  - platform: homeassistant
+    id: i2_state
+    entity_id: ${i2_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i2_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i2_format}", x); return std::string(b);
+  - platform: homeassistant
+    id: i3_state
+    entity_id: ${i3_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i3_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i3_format}", x); return std::string(b);
+  - platform: homeassistant
+    id: i4_state
+    entity_id: ${i4_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i4_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i4_format}", x); return std::string(b);
+  - platform: homeassistant
+    id: i5_state
+    entity_id: ${i5_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i5_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i5_format}", x); return std::string(b);
+  - platform: homeassistant
+    id: i6_state
+    entity_id: ${i6_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i6_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i6_format}", x); return std::string(b);
+  - platform: homeassistant
+    id: i7_state
+    entity_id: ${i7_entity}
+    on_value:
+      - lvgl.label.update:
+          id: i7_val
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--");
+            char b[16]; snprintf(b, sizeof(b), "${i7_format}", x); return std::string(b);
+
+globals:
+  - id: dimmed
+    type: bool
+    initial_value: 'false'
+
+script:
+  - id: update_clock
+    then:
+      - lvgl.label.update:
+          id: status_clock
+          text: !lambda 'return id(ha_time).now().strftime("%H:%M");'
+
+  - id: wake_screen
+    then:
+      - lvgl.widget.update:
+          id: wake_shield
+          hidden: true
+      - globals.set: {id: dimmed, value: 'false'}
+      - light.turn_on:
+          id: backlight
+          brightness: ${bright_active}
+
+  # Taps, cold tap and shower need a long press; a short tap shows this hint.
+  - id: hold_hint
+    mode: restart
+    then:
+      - lvgl.label.update: {id: status_clock, text: "Hold to use"}
+      - delay: 2s
+      - script.execute: update_clock
+
+  - id: nav_select
+    parameters:
+      p: int
+    then:
+      - lvgl.widget.update: {id: nav_0, state: {checked: !lambda 'return p == 0;'}}
+      - lvgl.widget.update: {id: nav_1, state: {checked: !lambda 'return p == 1;'}}
+      - lvgl.widget.update: {id: nav_2, state: {checked: !lambda 'return p == 2;'}}
+      - lvgl.widget.update: {id: nav_3, state: {checked: !lambda 'return p == 3;'}}
+      - lvgl.widget.update: {id: nav_4, state: {checked: !lambda 'return p == 4;'}}
+      - lvgl.widget.update: {id: nav_5, state: {checked: !lambda 'return p == 5;'}}
+
+# =============================================================================
+# Fonts - Material Design Icons. Each code may appear only once per font.
+# =============================================================================
+font:
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: icon_font          # control tiles
+    size: 38
+    bpp: 4
+    glyphs:
+      - "\U000F02E3"
+      - "\U000F0099"
+      - "\U000F04B9"
+      - "\U000F156D"
+      - "\U000F181C"
+      - "\U000F1054"
+      - "\U000F095F"
+      - "\U000F05FA"
+      - "\U000F179B"
+      - "\U000F091D"
+      - "\U000F1819"
+      - "\U000F09A1"
+      - "\U000F0769"
+      - "\U000F1B29"
+      - "\U000F1B2A"
+      - "\U000F0210"
+      - "\U000F1A80"
+      - "\U000F1A85"
+      - "\U000F0438"
+      - "\U000F1A45"
+      - "\U000F0AE0"
+      - "\U000F04B2"
+      - "\U000F0849"
+      - "\U000F1A6B"
+      - "\U000F1846"
+      - "\U000F048B"
+      - "\U000F11E1"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: info_font          # climate tiles
+    size: 24
+    bpp: 4
+    glyphs:
+      - "\U000F050F"
+      - "\U000F0F55"
+      - "\U000F048B"
+      - "\U000F1A80"
+      - "\U000F0F92"
+      - "\U000F0A72"
+      - "\U000F1A73"
+      - "\U000F1504"
+      - "\U000F1502"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: nav_font           # page switcher (the mic glyph doubles for the voice button)
+    size: 28
+    bpp: 4
+    glyphs:
+      - "\U000F0335"
+      - "\U000F1254"
+      - "\U000F0F92"
+      - "\U000F02DC"
+      - "\U000F050F"
+      - "\U000F036C"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: status_font
+    size: 20
+    bpp: 4
+    glyphs:
+      - "\U000F05A9"
+      - "\U000F05AA"
+  - file: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: mic_font
+    size: 72
+    bpp: 4
+    glyphs:
+      - "\U000F036C"
+
+# =============================================================================
+# Screen
+# =============================================================================
+lvgl:
+  displays: lcd
+  # 90 = landscape one way up, 270 = the other way up.
+  rotation: 90
+  touchscreens:
+    - touchscreen_id: touch
+      long_press_time: 700ms   # how long to hold the tap / shower tiles
+  buffer_size: 25%
+  bg_color: ${col_bg}
+  page_wrap: true
+
+  # Dim after a while; the first touch on a dim screen only wakes it.
+  on_idle:
+    timeout: ${dim_after}
+    then:
+      - if:
+          condition:
+            lambda: 'return !id(dimmed);'
+          then:
+            - globals.set: {id: dimmed, value: 'true'}
+            - lvgl.widget.update:
+                id: wake_shield
+                hidden: false
+            - light.turn_on:
+                id: backlight
+                brightness: ${bright_idle}
+
+  theme:
+    button:
+      bg_color: ${col_tile}
+      bg_opa: cover
+      border_width: 0
+      shadow_width: 0
+      radius: 14
+      text_color: ${col_text}
+      text_font: montserrat_16
+      pressed:
+        bg_color: 0x41474E
+      checked:
+        bg_color: ${col_tile_on}
+        text_color: ${col_text_on}
+    label:
+      text_color: ${col_text}
+
+  style_definitions:
+    - id: page_style
+      bg_color: ${col_bg}
+      bg_opa: cover
+      text_color: ${col_text}
+      pad_top: 40
+      pad_bottom: 54
+      pad_left: 8
+      pad_right: 8
+      pad_row: 8
+      pad_column: 8
+    - id: info_style
+      bg_color: ${col_tile}
+      bg_opa: cover
+      border_width: 0
+      radius: 14
+      pad_all: 8
+      text_color: ${col_text}
+
+  # ------------------------------------------------- always on top of pages --
+  top_layer:
+    widgets:
+      # Status bar
+      - obj:
+          align: top_mid
+          width: 100%
+          height: 36
+          bg_opa: transp
+          border_width: 0
+          pad_left: 12
+          pad_right: 12
+          text_color: ${col_text}
+          clickable: false
+          scrollable: false
+          widgets:
+            - label:
+                id: status_temp
+                align: left_mid
+                text_font: montserrat_20
+                text: "--°"
+            - label:
+                id: status_clock
+                align: center
+                text_font: montserrat_20
+                text: "--:--"
+            - label:
+                id: wifi_icon
+                align: right_mid
+                text_font: status_font
+                text_color: ${col_dim}
+                text: "\U000F05AA"
+      # Page switcher
+      - obj:
+          align: bottom_mid
+          width: 100%
+          height: 50
+          bg_color: ${col_bg}
+          bg_opa: cover
+          border_width: 0
+          radius: 0
+          pad_all: 4
+          scrollable: false
+          layout:
+            type: flex
+            flex_flow: row
+            flex_align_main: space_evenly
+            flex_align_cross: center
+          widgets:
+            - button:
+                id: nav_0
+                width: 68
+                height: 42
+                bg_opa: transp
+                text_color: ${col_dim}
+                checked:
+                  bg_opa: cover
+                  bg_color: ${col_tile}
+                  text_color: ${col_tile_on}
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nav_font
+                      text: "\U000F0335"
+                on_click:
+                  - lvgl.page.show: lights_page
+            - button:
+                id: nav_1
+                width: 68
+                height: 42
+                bg_opa: transp
+                text_color: ${col_dim}
+                checked:
+                  bg_opa: cover
+                  bg_color: ${col_tile}
+                  text_color: ${col_tile_on}
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nav_font
+                      text: "\U000F1254"
+                on_click:
+                  - lvgl.page.show: hallbath_page
+            - button:
+                id: nav_2
+                width: 68
+                height: 42
+                bg_opa: transp
+                text_color: ${col_dim}
+                checked:
+                  bg_opa: cover
+                  bg_color: ${col_tile}
+                  text_color: ${col_tile_on}
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nav_font
+                      text: "\U000F0F92"
+                on_click:
+                  - lvgl.page.show: water_page
+            - button:
+                id: nav_3
+                width: 68
+                height: 42
+                bg_opa: transp
+                text_color: ${col_dim}
+                checked:
+                  bg_opa: cover
+                  bg_color: ${col_tile}
+                  text_color: ${col_tile_on}
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nav_font
+                      text: "\U000F02DC"
+                on_click:
+                  - lvgl.page.show: modes_page
+            - button:
+                id: nav_4
+                width: 68
+                height: 42
+                bg_opa: transp
+                text_color: ${col_dim}
+                checked:
+                  bg_opa: cover
+                  bg_color: ${col_tile}
+                  text_color: ${col_tile_on}
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nav_font
+                      text: "\U000F050F"
+                on_click:
+                  - lvgl.page.show: climate_page
+            - button:
+                id: nav_5
+                width: 68
+                height: 42
+                bg_opa: transp
+                text_color: ${col_dim}
+                checked:
+                  bg_opa: cover
+                  bg_color: ${col_tile}
+                  text_color: ${col_tile_on}
+                widgets:
+                  - label:
+                      align: center
+                      text_font: nav_font
+                      text: "\U000F036C"
+                on_click:
+                  - lvgl.page.show: voice_page
+      # Full-screen catcher, shown only while the screen is dimmed, so the
+      # touch that wakes the panel can't also toggle a light.
+      - obj:
+          id: wake_shield
+          hidden: true
+          align: center
+          width: 100%
+          height: 100%
+          bg_opa: transp
+          border_width: 0
+          radius: 0
+          on_press:
+            - script.execute: wake_screen
+
+  pages:
+    - id: lights_page
+      styles: page_style
+      scrollbar_mode: "off"
+      on_load:
+        - script.execute: {id: nav_select, p: 0}
+      on_swipe_left:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.next:
+            animation: move_left
+            time: 200ms
+      on_swipe_right:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.previous:
+            animation: move_right
+            time: 200ms
+      layout:
+        type: grid
+        grid_columns: [FR(1), FR(1), FR(1), FR(1)]
+        grid_rows: [FR(1), FR(1)]
+      widgets:
+        - button:
+            id: l1_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l1_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l1_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l1_entity}
+        - button:
+            id: l2_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l2_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l2_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l2_entity}
+        - button:
+            id: l3_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l3_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l3_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l3_entity}
+        - button:
+            id: l4_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l4_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l4_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l4_entity}
+        - button:
+            id: l5_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l5_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l5_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l5_entity}
+        - button:
+            id: l6_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l6_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l6_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l6_entity}
+        - button:
+            id: l7_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l7_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l7_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l7_entity}
+        - button:
+            id: l8_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${l8_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${l8_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${l8_entity}
+    - id: hallbath_page
+      styles: page_style
+      scrollbar_mode: "off"
+      on_load:
+        - script.execute: {id: nav_select, p: 1}
+      on_swipe_left:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.next:
+            animation: move_left
+            time: 200ms
+      on_swipe_right:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.previous:
+            animation: move_right
+            time: 200ms
+      layout:
+        type: grid
+        grid_columns: [FR(1), FR(1), FR(1), FR(1)]
+        grid_rows: [FR(1), FR(1)]
+      widgets:
+        - button:
+            id: b1_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b1_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b1_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b1_entity}
+        - button:
+            id: b2_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b2_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b2_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b2_entity}
+        - button:
+            id: b3_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b3_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b3_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b3_entity}
+        - button:
+            id: b4_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b4_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b4_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b4_entity}
+        - button:
+            id: b5_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b5_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b5_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b5_entity}
+        - button:
+            id: b6_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b6_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b6_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b6_entity}
+        - button:
+            id: b7_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b7_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b7_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b7_entity}
+        - button:
+            id: b8_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${b8_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${b8_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${b8_entity}
+    - id: water_page
+      styles: page_style
+      scrollbar_mode: "off"
+      on_load:
+        - script.execute: {id: nav_select, p: 2}
+      on_swipe_left:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.next:
+            animation: move_left
+            time: 200ms
+      on_swipe_right:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.previous:
+            animation: move_right
+            time: 200ms
+      layout:
+        type: grid
+        grid_columns: [FR(1), FR(1), FR(1), FR(1)]
+        grid_rows: [FR(1), FR(1)]
+      widgets:
+        - button:
+            id: w1_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w1_icon}
+              - label:
+                  align: top_right
+                  text_font: montserrat_14
+                  text: "HOLD"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w1_name}
+            on_short_click:
+              - script.execute: hold_hint
+            on_long_press:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w1_entity}
+        - button:
+            id: w2_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w2_icon}
+              - label:
+                  align: top_right
+                  text_font: montserrat_14
+                  text: "HOLD"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w2_name}
+            on_short_click:
+              - script.execute: hold_hint
+            on_long_press:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w2_entity}
+        - button:
+            id: w3_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w3_icon}
+              - label:
+                  align: top_right
+                  text_font: montserrat_14
+                  text: "HOLD"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w3_name}
+            on_short_click:
+              - script.execute: hold_hint
+            on_long_press:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w3_entity}
+        - button:
+            id: w4_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w4_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w4_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w4_entity}
+        - button:
+            id: w5_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w5_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w5_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w5_entity}
+        - button:
+            id: w6_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w6_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w6_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w6_entity}
+        - button:
+            id: w7_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w7_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w7_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w7_entity}
+        - button:
+            id: w8_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${w8_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${w8_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${w8_entity}
+    - id: modes_page
+      styles: page_style
+      scrollbar_mode: "off"
+      on_load:
+        - script.execute: {id: nav_select, p: 3}
+      on_swipe_left:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.next:
+            animation: move_left
+            time: 200ms
+      on_swipe_right:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.previous:
+            animation: move_right
+            time: 200ms
+      layout:
+        type: grid
+        grid_columns: [FR(1), FR(1), FR(1), FR(1)]
+        grid_rows: [FR(1), FR(1)]
+      widgets:
+        - button:
+            id: m1_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m1_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m1_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m1_entity}
+        - button:
+            id: m2_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m2_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m2_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m2_entity}
+        - button:
+            id: m3_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m3_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m3_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m3_entity}
+        - button:
+            id: m4_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m4_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m4_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m4_entity}
+        - button:
+            id: m5_tile
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m5_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m5_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m5_entity}
+        - button:
+            id: m6_tile
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m6_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m6_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m6_entity}
+        - button:
+            id: m7_tile
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m7_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m7_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m7_entity}
+        - button:
+            id: m8_tile
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            pad_all: 8
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: icon_font
+                  text: ${m8_icon}
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: wrap
+                  text: ${m8_name}
+            on_click:
+              - homeassistant.action:
+                  action: homeassistant.toggle
+                  data:
+                    entity_id: ${m8_entity}
+    - id: climate_page
+      styles: page_style
+      scrollbar_mode: "off"
+      on_load:
+        - script.execute: {id: nav_select, p: 4}
+      on_swipe_left:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.next:
+            animation: move_left
+            time: 200ms
+      on_swipe_right:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.previous:
+            animation: move_right
+            time: 200ms
+      layout:
+        type: grid
+        grid_columns: [FR(1), FR(1), FR(1), FR(1)]
+        grid_rows: [FR(1), FR(1)]
+      widgets:
+        - obj:
+            id: i1_tile
+            styles: info_style
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i1_icon}
+              - label:
+                  id: i1_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i1_name}
+        - obj:
+            id: i2_tile
+            styles: info_style
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i2_icon}
+              - label:
+                  id: i2_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i2_name}
+        - obj:
+            id: i3_tile
+            styles: info_style
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i3_icon}
+              - label:
+                  id: i3_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i3_name}
+        - obj:
+            id: i4_tile
+            styles: info_style
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 0
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i4_icon}
+              - label:
+                  id: i4_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i4_name}
+        - obj:
+            id: i5_tile
+            styles: info_style
+            grid_cell_column_pos: 0
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i5_icon}
+              - label:
+                  id: i5_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i5_name}
+        - obj:
+            id: i6_tile
+            styles: info_style
+            grid_cell_column_pos: 1
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i6_icon}
+              - label:
+                  id: i6_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i6_name}
+        - obj:
+            id: i7_tile
+            styles: info_style
+            grid_cell_column_pos: 2
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: ${i7_icon}
+              - label:
+                  id: i7_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: ${i7_name}
+        - obj:
+            id: leak_tile
+            styles: info_style
+            bg_color: ${col_ok}
+            grid_cell_column_pos: 3
+            grid_cell_row_pos: 1
+            grid_cell_x_align: stretch
+            grid_cell_y_align: stretch
+            gesture_bubble: true
+            scrollable: false
+            widgets:
+              - label:
+                  id: leak_ic
+                  align: top_left
+                  text_font: info_font
+                  text_color: ${col_dim}
+                  text: "\U000F1504"
+              - label:
+                  id: leak_val
+                  align: left_mid
+                  y: 6
+                  text_font: montserrat_20
+                  text: "--"
+              - label:
+                  align: bottom_left
+                  width: 100%
+                  long_mode: dot
+                  text_font: montserrat_14
+                  text_color: ${col_dim}
+                  text: "Leak"
+    - id: voice_page
+      styles: page_style
+      scrollbar_mode: "off"
+      on_load:
+        - script.execute: {id: nav_select, p: 5}
+      on_swipe_left:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.next:
+            animation: move_left
+            time: 200ms
+      on_swipe_right:
+        - lambda: 'lv_indev_wait_release(lv_indev_active());'
+        - lvgl.page.previous:
+            animation: move_right
+            time: 200ms
+      widgets:
+        - button:
+            id: mic_btn
+            align: left_mid
+            x: 8
+            width: 120
+            height: 120
+            radius: 60
+            gesture_bubble: true
+            widgets:
+              - label:
+                  align: center
+                  text_font: mic_font
+                  text: "\U000F036C"
+            on_click:
+              - if:
+                  condition: voice_assistant.is_running
+                  then:
+                    - voice_assistant.stop:
+                  else:
+                    - voice_assistant.start:
+        - label:
+            id: voice_state
+            x: 148
+            y: 0
+            width: 300
+            long_mode: wrap
+            text_font: montserrat_20
+            text: "Tap the mic or say \"Okay Nabu\""
+        - label:
+            id: voice_stt
+            x: 148
+            y: 50
+            width: 300
+            long_mode: wrap
+            text_font: montserrat_16
+            text_color: ${col_dim}
+            text: ""
+        - label:
+            id: voice_reply
+            x: 148
+            y: 100
+            width: 300
+            height: 120
+            long_mode: wrap
+            text_font: montserrat_16
+            text: ""

@@ -1,0 +1,41 @@
+name: Build firmware
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Wi-Fi details come from the repo's Actions secrets, so they are never
+      # stored in the repository itself.
+      - name: Write secrets.yaml
+        env:
+          WIFI_SSID: ${{ secrets.WIFI_SSID }}
+          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
+        run: |
+          if [ -z "$WIFI_SSID" ] || [ -z "$WIFI_PASSWORD" ]; then
+            echo "::error::Add WIFI_SSID and WIFI_PASSWORD under Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          printf 'wifi_ssid: "%s"\nwifi_password: "%s"\n' "$WIFI_SSID" "$WIFI_PASSWORD" > secrets.yaml
+
+      - name: Compile with ESPHome
+        id: esphome
+        uses: esphome/build-action@v8.1.0
+        with:
+          yaml-file: wall-panel.yaml
+
+      - name: Remove secrets.yaml
+        if: always()
+        run: rm -f secrets.yaml
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: displayiq-firmware
+          path: ${{ steps.esphome.outputs.name }}
